@@ -7,6 +7,7 @@ read_log = function(){
   x = read.delim(f, sep=',', header=FALSE)
   colnames(x) = c('Time', 'IO_load')
   x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
+  print(nrow(x))
   return(x)
 }
 
