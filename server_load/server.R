@@ -2,7 +2,7 @@ library(shiny)
 library(ggplot2)
 
 read_log = function(){
-  x = read.delim('/Users/nick/Desktop/SERVER-LOAD-LOG.csv', sep=',', header=FALSE)
+  x = read.delim('/tmp/SERVER-LOAD-LOG.csv', sep=',', header=FALSE)
   colnames(x) = c('Time', 'IO_load')
   x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
   return(x)
