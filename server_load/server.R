@@ -2,7 +2,9 @@ library(shiny)
 library(ggplot2)
 
 read_log = function(){
-  x = read.delim('/tmp/SERVER-LOAD-LOG.csv', sep=',', header=FALSE)
+  #x = read.delim('/Users/nick/Desktop/SERVER-LOAD-LOG.csv', sep=',', header=FALSE)
+  f = '/ebio/abt3_projects/databases/server/SERVER-LOAD-LOG.csv'
+  x = read.delim(f, sep=',', header=FALSE)
   colnames(x) = c('Time', 'IO_load')
   x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
   return(x)
@@ -20,8 +22,26 @@ shinyServer(function(input, output, session) {
     # The isolate() makes this observer _not_ get invalidated and re-executed
     output$plot1 <- renderPlot({
       x = read_log() 
-      x = x[x$Time >= input$timeRangeL[1] & x$Time <= input$timeRangeL[2],]
-      x = x[x$Time >= input$timeRangeS[1] & x$Time <= input$timeRangeS[2],]
+      # get range between the 2 sliders; short range has priority
+      ## min time
+      min_timeS = as.POSIXct(format(Sys.time() - 60 * 60 * 23.8, "%Y-%m-%d %H:%M:%S"))
+      if(input$timeRangeS[1] < min_timeS){
+        if(input$timeRangeL[1] < min_timeS){
+          min_time = input$timeRangeL[1]
+        } else {
+          min_time = min_timeS
+        }
+      } else {
+        min_time = input$timeRangeS[1]
+      }
+      ## max time
+      if(input$timeRangeL[2] < input$timeRangeS[2]){
+        max_time = input$timeRangeL[2]
+      } else {
+        max_time = input$timeRangeS[2]
+      }
+      x = x[x$Time >= min_time & x$Time <= max_time,]
+      # plotting
       ggplot(x, aes(Time, IO_load, color=IO_load)) + 
         geom_line() +
         geom_point() +
