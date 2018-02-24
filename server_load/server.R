@@ -2,18 +2,17 @@ library(shiny)
 library(ggplot2)
 
 read_log = function(){
-  #f = '/Users/nick/Desktop/SERVER-LOAD-LOG.csv'
+  #f = '/Users/nick/dev/R/serverAdminShiny/server_load/SERVER-LOAD-LOG_test.csv'
   f = '/ebio/abt3_projects/databases/server/SERVER-LOAD-LOG.csv'
   x = read.delim(f, sep=',', header=FALSE)
   colnames(x) = c('Time', 'IO_load')
   x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
-  print(nrow(x))
   return(x)
 }
 
 shinyServer(function(input, output, session) {
   # Anything that calls autoInvalidate will automatically invalidate
-  autoInvalidate <- reactiveTimer(60*1000)
+  autoInvalidate <- reactiveTimer(30*1000)
   
   observe({
     # Invalidate and re-execute this reactive expression every time the timer fires.
@@ -43,7 +42,7 @@ shinyServer(function(input, output, session) {
       }
       x = x[x$Time >= min_time & x$Time <= max_time,]
       # plotting
-      ggplot(x, aes(Time, IO_load, color=IO_load)) + 
+      p = ggplot(x, aes(Time, IO_load, color=IO_load)) + 
         geom_line() +
         geom_point() +
         scale_color_continuous(low='black', high='red') +
@@ -53,6 +52,16 @@ shinyServer(function(input, output, session) {
           text = element_text(size=14),
           legend.position = 'none'
         )
+      # updating slider input
+      ## short time range
+      updateSliderInput(session, "timeRangeS", 
+                        min = as.POSIXct(format(Sys.time() - 60 * 60 * 24, "%Y-%m-%d %H:%M:%S")), 
+                        max =  as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
+      updateSliderInput(session, "timeRangeL", 
+                        min = as.POSIXct(format(Sys.time() - 60 * 60 * 24 * 7 * 4, "%Y-%m-%d %H:%M:%S")), 
+                        max =  as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
+      # return plot
+      return(p)
     })
   })
   
