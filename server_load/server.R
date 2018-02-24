@@ -2,7 +2,7 @@ library(shiny)
 library(ggplot2)
 
 read_log = function(){
-  #x = read.delim('/Users/nick/Desktop/SERVER-LOAD-LOG.csv', sep=',', header=FALSE)
+  #f = '/Users/nick/Desktop/SERVER-LOAD-LOG.csv'
   f = '/ebio/abt3_projects/databases/server/SERVER-LOAD-LOG.csv'
   x = read.delim(f, sep=',', header=FALSE)
   colnames(x) = c('Time', 'IO_load')
