@@ -10,7 +10,7 @@ shinyUI(fluidPage(
                        min = as.POSIXct(format(Sys.time() - 60 * 60 * 24, "%Y-%m-%d %H:%M:%S")),
                        max = as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
                        value = c(
-                         as.POSIXct(format(Sys.time() - 60 * 60 * 1, "%Y-%m-%d %H:%M:%S")),
+                         as.POSIXct(format(Sys.time() - 60 * 60 * 4, "%Y-%m-%d %H:%M:%S")),
                          as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
                        )
            ),
