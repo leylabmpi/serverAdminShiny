@@ -53,11 +53,17 @@ shinyServer(function(input, output, session) {
           legend.position = 'none'
         )
       # updating slider input
-      ## short time range
-      updateSliderInput(session, "timeRangeS", 
+      t_diff = as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")) - input$timeRangeS[2]
+      if(as.numeric(t_diff, units="secs") < 120){
+        valS = c(input$timeRangeS[1], as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
+        valL = c(input$timeRangeL[1], as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
+      } else {
+        valS = valL = NULL
+      }
+      updateSliderInput(session, "timeRangeS", value=valS,
                         min = as.POSIXct(format(Sys.time() - 60 * 60 * 24, "%Y-%m-%d %H:%M:%S")), 
                         max =  as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
-      updateSliderInput(session, "timeRangeL", 
+      updateSliderInput(session, "timeRangeL", value=valL,
                         min = as.POSIXct(format(Sys.time() - 60 * 60 * 24 * 7 * 4, "%Y-%m-%d %H:%M:%S")), 
                         max =  as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
       # return plot
