@@ -12,7 +12,7 @@ read_log = function(){
 
 shinyServer(function(input, output, session) {
   # Anything that calls autoInvalidate will automatically invalidate
-  autoInvalidate <- reactiveTimer(30*1000)
+  autoInvalidate <- reactiveTimer(10*1000)
   
   observe({
     # Invalidate and re-execute this reactive expression every time the timer fires.
@@ -54,7 +54,7 @@ shinyServer(function(input, output, session) {
         )
       # updating slider input
       t_diff = as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")) - input$timeRangeS[2]
-      if(as.numeric(t_diff, units="secs") < 120){
+      if(as.numeric(t_diff, units="secs") < 120 & as.numeric(t_diff, units="secs") > 5){
         valS = c(input$timeRangeS[1], as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
         valL = c(input$timeRangeL[1], as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
       } else {
