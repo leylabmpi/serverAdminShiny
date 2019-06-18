@@ -1,79 +1,104 @@
 library(shiny)
 library(ggplot2)
 
-read_log = function(){
-  #f = '/Users/nick/dev/R/serverAdminShiny/server_load/SERVER-LOAD-LOG_test.csv'
-  f = '/ebio/abt3_projects/databases/server/SERVER-LOAD-LOG.csv'
-  x = read.delim(f, sep=',', header=FALSE)
+read_log = function(file){
+  x = read.delim(file, sep=',', header=FALSE)
   colnames(x) = c('Time', 'IO_load')
   x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
   return(x)
 }
 
-shinyServer(function(input, output, session) {
-  # Anything that calls autoInvalidate will automatically invalidate
-  autoInvalidate <- reactiveTimer(10*1000)
+format_time = function(x){
+  x = as.POSIXct(format(x, "%Y-%m-%d %H:%M:%S"))
+  return(x)
+}
+
+shinyServer(function(input, output, session){
+  # Reading log file
+  F = '/Volumes/abt3_projects/databases/server/SERVER-LOAD-LOG.csv'
+  if(! file.exists(F)){
+    F = '/ebio/abt3_projects/databases/server/SERVER-LOAD-LOG.csv'
+  }
+  .read_log = reactiveFileReader(5000, session=session, 
+                                 filePath=F, 
+                                 readFunc=read_log)
   
+  
+  # reactive
   observe({
-    # Invalidate and re-execute this reactive expression every time the timer fires.
-    autoInvalidate()
+    # reading log 
+    x = .read_log()
+    min_time = format_time(min(x$Time))
+    max_time = format_time(max(x$Time))
+    last_hour = format_time(max_time - 60 * 60)
+    last_day = format_time(max_time - 60 * 60 * 24)
+    if(last_day < min_time){
+      last_day = min_time
+    }
     
-    # Do something each time this is invalidated.
-    # The isolate() makes this observer _not_ get invalidated and re-executed
+    # slider params
+    if(is.null(input$timeRangeS)){
+      # defaults
+      if(input$longRange == TRUE){
+        min_val = last_day
+      } else {
+        min_val = last_hour
+      }
+      timeRangeS_vals = c(min_val, max_time)
+    } else {
+      # min time
+      if (format_time(input$timeRangeS[1]) <= min_time){
+        min_val = min_time
+      } else {
+        min_val = format_time(input$timeRangeS[1])
+      }
+      # max time
+      if (as.numeric(max_time - input$timeRangeS[2], units='secs') < 120){
+        max_val = max_time
+      } else {
+        max_val = format_time(input$timeRangeS[2])
+      }
+      timeRangeS_vals = c(min_val, max_val)
+    }
+    
+    # sliders
+    if(input$longRange == TRUE){
+      min_range = min_time
+    } else {
+      min_range = last_day
+    }
+    output$timeRangeS = renderUI({
+      sliderInput("timeRangeS", label = "Time range", 
+                  value = timeRangeS_vals,
+                  min = min_range, 
+                  max = max_time)
+    })
+    
+    # Render plot
     output$plot1 <- renderPlot({
-      x = read_log() 
-      # get range between the 2 sliders; short range has priority
-      ## min time
-      min_timeS = as.POSIXct(format(Sys.time() - 60 * 60 * 23.8, "%Y-%m-%d %H:%M:%S"))
-      if(input$timeRangeS[1] < min_timeS){
-        if(input$timeRangeL[1] < min_timeS){
-          min_time = input$timeRangeL[1]
-        } else {
-          min_time = min_timeS
-        }
-      } else {
-        min_time = input$timeRangeS[1]
-      }
-      ## max time
-      if(input$timeRangeL[2] < input$timeRangeS[2]){
-        max_time = input$timeRangeL[2]
-      } else {
-        max_time = input$timeRangeS[2]
-      }
+      ## filter df
+      min_time = format_time(input$timeRangeS[1])
+      max_time = format_time(input$timeRangeS[2])
       x = x[x$Time >= min_time & x$Time <= max_time,]
+      
       # plotting
       p = ggplot(x, aes(Time, IO_load, color=IO_load)) + 
         geom_line() +
         geom_point() +
         scale_color_continuous(low='black', high='red') +
-        labs(y='I/O load') +
+        labs(y='LUX file server I/O load') +
         theme_bw() +
         theme(
           text = element_text(size=14),
           legend.position = 'none'
         )
-      # updating slider input
-      t_diff = as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")) - input$timeRangeS[2]
-      if(as.numeric(t_diff, units="secs") < 120 & as.numeric(t_diff, units="secs") > 5){
-        valS = c(input$timeRangeS[1], as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
-        valL = c(input$timeRangeL[1], as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
-      } else {
-        valS = valL = NULL
-      }
-      updateSliderInput(session, "timeRangeS", value=valS,
-                        min = as.POSIXct(format(Sys.time() - 60 * 60 * 24, "%Y-%m-%d %H:%M:%S")), 
-                        max =  as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
-      updateSliderInput(session, "timeRangeL", value=valL,
-                        min = as.POSIXct(format(Sys.time() - 60 * 60 * 24 * 7 * 4, "%Y-%m-%d %H:%M:%S")), 
-                        max =  as.POSIXct(format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
       # return plot
       return(p)
     })
   })
   
-  # Generate a new histogram each time the timer fires, but not when
+  # Generate a new plot
   output$plot <- renderPlot({
-    autoInvalidate()
     hist(rnorm(isolate(input$n)))
   })
 })
