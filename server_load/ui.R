@@ -14,9 +14,9 @@ shinyUI(fluidPage(
     column(8)
     )
   ),
-  plotOutput("qstat_plot"),
-  plotOutput("ps_rick_plot"),
-  plotOutput("ps_morty_plot"),
+  #plotOutput("qstat_plot"),
+  #plotOutput("ps_rick_plot"),
+  #plotOutput("ps_morty_plot"),
   fluidRow(
     column(1),
     column(3, numericInput('min_num_jobs', 
@@ -29,5 +29,9 @@ shinyUI(fluidPage(
                          label = 'Username',
                          value = NULL)
     )
+  ),
+  fluidRow(
+    column(7, plotOutput("df_now_perc_plot", height='700px')),
+    column(5, plotOutput("df_now_size_plot", height='700px'))
   )
 ))

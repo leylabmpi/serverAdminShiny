@@ -45,10 +45,15 @@ qstat_log = function(file){
 }
 
 df_log = function(file){
-  x = fread(file, sep='\t', header=FALSE, fill=TRUE)
-  x = as.data.frame()
+  col_cls = c(V7 = 'numeric', V8 = 'numeric', V9 = 'numeric')
+  x = fread(file, sep='\t', header=FALSE, fill=TRUE, 
+            colClasses = col_cls)
+  x = as.data.frame(x)
   colnames(x) = c('Time', 'file', 'itotal', 'iused', 'iavail',
                   'ipcent', 'size', 'used', 'avail', 'pcent')
+  x$size = x$size * 1024 / 1e+12
+  x$used = x$used * 1024 / 1e+12
+  x$avail = x$avail * 1024 / 1e+12
   #x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
   return(x)
 }
@@ -91,25 +96,6 @@ server_load_plot = function(x, input){
   return(p)
 }
 
-# qstat_log_plot = function(df, input){
-#   df = df[df$n_jobs > input$min_num_jobs,]
-#   if(! is.null(input$uname) & input$uname != ''){
-#     df = df[grepl(input$uname, df$uname),]
-#   }
-#   df$Time = format_time(df$Time) 
-#   if(nrow(df) <= 0){
-#     return(NULL)
-#   }
-#   p = df %>%
-#     gather(Metric, Value, -Time, -uname) %>%
-#     ggplot(aes(Time, Value, group=uname, color=uname)) +
-#     geom_line(alpha=0.25) +
-#     geom_point(alpha=0.5) +
-#     facet_grid(Metric ~ ., scales='free_y') +
-#     theme_bw()
-#   return(p)
-# }
-
 ps_log_plot = function(df, input){
   min_time = max(as.POSIXlt(df$Time)) - input$num_hours * 60 * 60
   df = df[df$Time >= min_time,]
@@ -129,9 +115,101 @@ ps_log_plot = function(df, input){
     geom_line(alpha=0.25) +
     geom_point(alpha=0.5) +
     facet_grid(Metric ~ ., scales='free_y') +
-    theme_bw()
+    theme_bw() +
+    theme(
+      axis.title.y = element_blank()
+    )
   return(p)
 }
+
+df_log_plot = function(df, input){
+  min_time = max(as.POSIXlt(df$Time)) - input$num_hours * 60 * 60
+  
+  # filter log df
+  df = df[df$Time >= min_time,]
+  df$Time = as.POSIXct(df$Time)
+  if(nrow(df) <= 0){
+    return(NULL)
+  }
+  
+  # plotting
+  p = df %>%
+    dplyr::select(Time, file, size, used, avail, pcent) %>%
+    gather(Metric, Value, -Time, -file) %>%
+    ggplot(aes(Time, Value, color=file)) + 
+    geom_line() +
+    geom_point() +
+    facet_grid(Metric ~ ., scales='free_y') +
+    theme_bw() +
+    theme(
+      legend.position='bottom'
+    )
+  return(p)
+}
+
+df_log_format = function(df, input){
+  df = df[df$Time == max(df$Time),]
+  to_rm = c('collectl', 'disk-usage', 'server-load', 'small_projects')
+  df = df %>%
+    mutate(file = gsub('/ebio/abt3_projects/', '', df$file)) %>%
+    filter(!grepl('^\\.', file),
+           ! file %in% to_rm) %>%
+    distinct(Time, file, .keep_all=TRUE) 
+  return(df)
+}
+
+df_log_now_perc_plot = function(df, input){
+  df = df_log_format(df, input)
+    
+#  Mt = c('Avail. (Tb)', 'Used (Tb)', '% Used')
+#  RN = data.frame(old_name = c('avail', 'used', 'pcent'),
+#                  Metric = factor(Mt, levels=Mt))
+  
+  # plotting
+  p = df %>%
+    dplyr::select(file, pcent) %>%
+    rename('Perc_Used' = pcent) %>%
+    mutate(file = reorder(file, Perc_Used)) %>%
+    ggplot(aes(file, Perc_Used, fill=Perc_Used)) + 
+    geom_bar(stat='identity') +
+    scale_fill_continuous(low='black', high='red') +
+    coord_flip() +
+    labs(x='/ebio/abt3_projects/', y='% used') +
+    theme_bw() +
+    theme(
+      legend.position = 'none',
+      axis.title.y = element_blank()
+    )
+  return(p)
+}
+
+df_log_now_size_plot = function(df, input){
+  df = df_log_format(df, input)
+  
+   Mt = c('Avail. (Tb)', 'Used (Tb)')
+   RN = data.frame(old_name = c('avail', 'used'),
+                   Metric = factor(Mt, levels=Mt))
+  
+  # plotting
+  p = df %>%
+    dplyr::select(file, avail, used, pcent) %>%
+    gather(old_name, Value, -file, -pcent) %>%
+    inner_join(RN, 'old_name') %>%
+    mutate(file = reorder(file, pcent)) %>%
+    ggplot(aes(file, Value, fill=Metric)) + 
+    geom_bar(stat='identity') +
+    scale_fill_discrete() +
+    coord_flip() +
+    labs(y='Available/Used (Tb)') +
+    theme_bw() +
+    theme(
+      legend.position = 'none',
+      axis.title.y = element_blank(),
+      axis.text.y = element_blank()
+    )
+  return(p)
+}
+
 
 shinyServer(function(input, output, session){
 
@@ -153,8 +231,8 @@ shinyServer(function(input, output, session){
   
   # df 
   .df_log = reactiveFileReader(10000, session=session, 
-                                  filePath=which_file('DF-LOG.tsv'), 
-                                  readFunc=df_log)
+                               filePath=which_file('DF-LOG.tsv'), 
+                               readFunc=df_log)
   
   #-- reactive --#
   # server load log
@@ -164,7 +242,7 @@ shinyServer(function(input, output, session){
     })
   })
 
-  # PS log
+  # PS & qstat logs
   observe({
     output$qstat_plot <- renderPlot({
      ps_log_plot(.qstat_log(), input)
@@ -174,6 +252,16 @@ shinyServer(function(input, output, session){
     })
     output$ps_morty_plot <- renderPlot({
       ps_log_plot(.ps_morty_log(), input)
+    })
+  })
+  
+  # df log
+  observe({
+    output$df_now_perc_plot <- renderPlot({
+      df_log_now_perc_plot(.df_log(), input)
+    })
+    output$df_now_size_plot <- renderPlot({
+      df_log_now_size_plot(.df_log(), input)
     })
   })
   
