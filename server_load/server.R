@@ -96,7 +96,7 @@ server_load_plot = function(x, input){
   return(p)
 }
 
-ps_log_plot = function(df, input){
+ps_log_plot = function(df, input, plot_title){
   min_time = max(as.POSIXlt(df$Time)) - input$num_hours * 60 * 60
   df = df[df$Time >= min_time,]
   df$Time = as.POSIXct(df$Time)
@@ -114,7 +114,9 @@ ps_log_plot = function(df, input){
     ggplot(aes(Time, Value, group=uname, color=uname)) +
     geom_line(alpha=0.25) +
     geom_point(alpha=0.5) +
+    scale_color_discrete('Username') +
     facet_grid(Metric ~ ., scales='free_y') +
+    labs(title=plot_title) +
     theme_bw() +
     theme(
       axis.title.y = element_blank()
@@ -160,10 +162,6 @@ df_log_format = function(df, input){
 
 df_log_now_perc_plot = function(df, input){
   df = df_log_format(df, input)
-    
-#  Mt = c('Avail. (Tb)', 'Used (Tb)', '% Used')
-#  RN = data.frame(old_name = c('avail', 'used', 'pcent'),
-#                  Metric = factor(Mt, levels=Mt))
   
   # plotting
   p = df %>%
@@ -177,8 +175,7 @@ df_log_now_perc_plot = function(df, input){
     labs(x='/ebio/abt3_projects/', y='% used') +
     theme_bw() +
     theme(
-      legend.position = 'none',
-      axis.title.y = element_blank()
+      legend.position = 'none'
     )
   return(p)
 }
@@ -245,13 +242,13 @@ shinyServer(function(input, output, session){
   # PS & qstat logs
   observe({
     output$qstat_plot <- renderPlot({
-     ps_log_plot(.qstat_log(), input)
+     ps_log_plot(.qstat_log(), input, 'Cluster')
     })
     output$ps_rick_plot <- renderPlot({
-      ps_log_plot(.ps_rick_log(), input)
+      ps_log_plot(.ps_rick_log(), input, 'rick VM')
     })
     output$ps_morty_plot <- renderPlot({
-      ps_log_plot(.ps_morty_log(), input)
+      ps_log_plot(.ps_morty_log(), input, 'morty VM')
     })
   })
   
@@ -265,4 +262,8 @@ shinyServer(function(input, output, session){
     })
   })
   
+  # Rstudio server pro dashboard
+  output$rstudio_dashboard <- renderUI({
+    tags$iframe(src = 'http://morty.eb.local:8787/admin/dashboard', height=500, width=1000)
+  })
 })
