@@ -45,15 +45,29 @@ qstat_log = function(file){
 }
 
 df_log = function(file){
-  col_cls = c(V7 = 'numeric', V8 = 'numeric', V9 = 'numeric')
+  col_cls = c(V3 = 'numeric', V4 = 'numeric', V5 = 'numeric', 
+              V6 = 'numeric', V7 = 'numeric', V8 = 'numeric')
   x = fread(file, sep='\t', header=FALSE, fill=TRUE, 
             colClasses = col_cls)
   x = as.data.frame(x)
-  colnames(x) = c('Time', 'file', 'itotal', 'iused', 'iavail',
-                  'ipcent', 'size', 'used', 'avail', 'pcent')
+  colnames(x) = c('Time', 'file', 'size', 'used', 
+                  'avail', 'pcent', 'itotal', 'iused')
   x$size = x$size * 1024 / 1e+12
   x$used = x$used * 1024 / 1e+12
   x$avail = x$avail * 1024 / 1e+12
+
+  x$itotal = ifelse(x$itotal <= x$iused , x$iused, x$itotal)
+  x$itotal = ifelse(x$itotal > 1e9, NA, x$itotal)
+  x$iused = ifelse(x$iused > 1e9, NA, x$iused)
+  x$iavail = x$itotal - x$iused
+  x$ipcent = x$iused / x$itotal * 100.0
+  x$iavail = x$itotal - x$iused
+  x$iavail = ifelse(x$iavail > 1e12, NA, x$iavail)
+  
+  x$itotal = x$itotal / 1e6
+  x$iused = x$iused / 1e6
+  x$iavail = x$iavail / 1e6
+  
   #x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
   return(x)
 }
@@ -124,31 +138,6 @@ ps_log_plot = function(df, input, plot_title){
   return(p)
 }
 
-df_log_plot = function(df, input){
-  min_time = max(as.POSIXlt(df$Time)) - input$num_hours * 60 * 60
-  
-  # filter log df
-  df = df[df$Time >= min_time,]
-  df$Time = as.POSIXct(df$Time)
-  if(nrow(df) <= 0){
-    return(NULL)
-  }
-  
-  # plotting
-  p = df %>%
-    dplyr::select(Time, file, size, used, avail, pcent) %>%
-    gather(Metric, Value, -Time, -file) %>%
-    ggplot(aes(Time, Value, color=file)) + 
-    geom_line() +
-    geom_point() +
-    facet_grid(Metric ~ ., scales='free_y') +
-    theme_bw() +
-    theme(
-      legend.position='bottom'
-    )
-  return(p)
-}
-
 df_log_format = function(df, input){
   df = df[df$Time == max(df$Time),]
   to_rm = c('collectl', 'disk-usage', 'server-load', 'small_projects')
@@ -170,9 +159,31 @@ df_log_now_perc_plot = function(df, input){
     mutate(file = reorder(file, Perc_Used)) %>%
     ggplot(aes(file, Perc_Used, fill=Perc_Used)) + 
     geom_bar(stat='identity') +
+    scale_y_continuous(limits=c(0, 100)) +
     scale_fill_continuous(low='black', high='red') +
     coord_flip() +
-    labs(x='/ebio/abt3_projects/', y='% used') +
+    labs(x='/ebio/abt3_projects/', y='% size used') +
+    theme_bw() +
+    theme(
+      legend.position = 'none'
+    )
+  return(p)
+}
+
+df_log_now_iperc_plot = function(df, input){
+  df = df_log_format(df, input)
+  
+  # plotting
+  p = df %>%
+    dplyr::select(file, ipcent) %>%
+    rename('Perc_Used' = ipcent) %>%
+    mutate(file = reorder(file, Perc_Used)) %>%
+    ggplot(aes(file, Perc_Used, fill=Perc_Used)) + 
+    geom_bar(stat='identity') +
+    scale_y_continuous(limits=c(0, 100)) +
+    scale_fill_continuous(low='black', high='red') +
+    coord_flip() +
+    labs(x='/ebio/abt3_projects/', y='% inodes used') +
     theme_bw() +
     theme(
       legend.position = 'none'
@@ -195,9 +206,36 @@ df_log_now_size_plot = function(df, input){
     mutate(file = reorder(file, pcent)) %>%
     ggplot(aes(file, Value, fill=Metric)) + 
     geom_bar(stat='identity') +
-    scale_fill_discrete() +
+    scale_fill_manual(values=c('blue', 'red')) +
     coord_flip() +
-    labs(y='Available/Used (Tb)') +
+    labs(y='Available [blue] & Used [red]  (Tb)') +
+    theme_bw() +
+    theme(
+      legend.position = 'none',
+      axis.title.y = element_blank(),
+      axis.text.y = element_blank()
+    )
+  return(p)
+}
+
+df_log_now_inodes_plot = function(df, input){
+  df = df_log_format(df, input)
+  
+  Mt = c('Available', 'Used')
+  RN = data.frame(old_name = c('iavail', 'iused'),
+                  Metric = factor(Mt, levels=Mt))
+  
+  # plotting
+  p = df %>%
+    dplyr::select(file, iavail, iused, ipcent) %>%
+    gather(old_name, Value, -file, -ipcent) %>%
+    inner_join(RN, 'old_name') %>%
+    mutate(file = reorder(file, ipcent)) %>%
+    ggplot(aes(file, Value, fill=Metric)) + 
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('blue', 'red')) +
+    coord_flip() +
+    labs(y='Available [blue] & Used [red]  (mil. inodes)') +
     theme_bw() +
     theme(
       legend.position = 'none',
@@ -254,11 +292,18 @@ shinyServer(function(input, output, session){
   
   # df log
   observe({
+    df = .df_log()
     output$df_now_perc_plot <- renderPlot({
-      df_log_now_perc_plot(.df_log(), input)
+      df_log_now_perc_plot(df, input)
     })
     output$df_now_size_plot <- renderPlot({
-      df_log_now_size_plot(.df_log(), input)
+      df_log_now_size_plot(df, input)
+    })
+    output$df_now_iperc_plot <- renderPlot({
+      df_log_now_iperc_plot(df, input)
+    })
+    output$df_now_inodes_plot <- renderPlot({
+      df_log_now_inodes_plot(df, input)
     })
   })
   
