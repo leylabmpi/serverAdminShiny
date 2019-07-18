@@ -19,12 +19,19 @@ server_load_log = function(file){
 }
 
 #' Reading in ps (server jobs) log 
-ps_log = function(file){
+ps_log = function(file, input){
   x = fread(file, sep='\t', header=FALSE, fill=TRUE)
   x = as.data.frame(x)
   colnames(x) = c('Time', 'uname', 'ppid', 'pid', 
                   'etime', 'perc_cpu', 'perc_mem')
-  #x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
+  x$Time = strptime(x$Time, "%Y-%m-%d %H:%M:%S")
+  
+  # filter
+  min_time = max(x$Time) - input$num_hours2 * 60 * 60
+  x = x[x$Time >= min_time,]
+  x$Time = as.character(x$Time)
+  
+  # summarizing
   x = x %>%
     group_by(Time, uname) %>%
     summarize(n_jobs = n(),
@@ -35,13 +42,20 @@ ps_log = function(file){
 }
 
 #' Reading in qstat log
-qstat_log = function(file){
+qstat_log = function(file, input){
   x = fread(file, sep='\t', header=FALSE, fill=TRUE) 
   x = as.data.frame(x)
   colnames(x) = c('Time', 'X', 'JB_job_number', 'JB_name', 
                   'uname', 'JB_department', 'state', 
                   'io_usage', 'cpu_usage', 'mem_usage')
-  #x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
+  x$Time = strptime(x$Time, "%Y-%m-%d %H:%M:%S")
+  
+  # filter df
+  min_time = max(x$Time) - input$num_hours2 * 60 * 60
+  x = x[x$Time >= min_time,]
+  x$Time = as.character(x$Time)
+  
+  # summarizing
   x = x %>%
     group_by(Time, uname) %>%
     summarize(n_jobs = n(),
@@ -78,8 +92,11 @@ df_log = function(file, input){
   x$iavail = x$iavail / 1e6
   
   # filter
-  if(! is.null(input$projname) & input$projname != ''){
-    x = x[grepl(input$projname, basename(x$file)),]
+  if(! is.null(input$projname1) & input$projname1 != ''){
+    x = x[grepl(input$projname1, basename(x$file)),]
+  }
+  if(! is.null(input$projname2) & input$projname2 != ''){
+    x = x[grepl(input$projname2, basename(x$file)),]
   }
   return(x)
 }
@@ -266,14 +283,17 @@ shinyServer(function(input, output, session){
   # ps 
   .ps_rick_log = reactiveFileReader(10000, session=session, 
                                     filePath=which_file('PS-rick-LOG.tsv'), 
-                                    readFunc=ps_log)
+                                    readFunc=ps_log,
+                                    input=input)
   .ps_morty_log = reactiveFileReader(10000, session=session, 
                                     filePath=which_file('PS-morty-LOG.tsv'), 
-                                    readFunc=ps_log)
+                                    readFunc=ps_log,
+                                    input=input)
   # qstat
   .qstat_log = reactiveFileReader(10000, session=session, 
                                   filePath=which_file('QSTAT-JOB-LOG.tsv'), 
-                                  readFunc=qstat_log)
+                                  readFunc=qstat_log,
+                                  input=input)
   
   # df 
   .df_log = reactiveFileReader(10000, session=session, 

@@ -21,13 +21,19 @@ shinyUI(
              fluidRow(
                column(1),
                column(3, numericInput('min_num_jobs',
-                                      label = 'Job number cutoff',
+                                      label = 'Job count cutoff',
                                       value = 5,
                                       min = 1,
                                       step = 1)),
                column(3, textInput('uname',
                                    label = 'Username filter',
-                                   value = NULL))
+                                   value = NULL)),
+               column(3, numericInput('num_hours2', 
+                                      label = 'Number of hours to display',
+                                      value = 4,
+                                      min = 1,
+                                      max = 24 * 7 * 4,
+                                      step = 1))
              ),
             plotOutput("qstat_plot"),
             plotOutput("ps_rick_plot"),
@@ -35,7 +41,7 @@ shinyUI(
     ),
     tabPanel("Project sizes",
       fluidRow(
-        column(3, textInput('projname',
+        column(3, textInput('projname1',
                             label = 'Project name filter',
                             value = NULL))
       ),
@@ -46,7 +52,7 @@ shinyUI(
     ),
     tabPanel("Project inodes",
              fluidRow(
-               column(3, textInput('projname',
+               column(3, textInput('projname2',
                                    label = 'Project name filter',
                                    value = NULL))
              ),
