@@ -4,6 +4,12 @@ library(tidyr)
 library(ggplot2)
 library(data.table)
 
+as.Num = function(x){
+  x = as.numeric(as.character(x))
+  return(x)
+}
+
+#' Reading in server load log 
 server_load_log = function(file){
   x = fread(file, sep=',', header=FALSE, fill=TRUE)
   x = as.data.frame(x)
@@ -12,6 +18,7 @@ server_load_log = function(file){
   return(x)
 }
 
+#' Reading in ps (server jobs) log 
 ps_log = function(file){
   x = fread(file, sep='\t', header=FALSE, fill=TRUE)
   x = as.data.frame(x)
@@ -27,8 +34,9 @@ ps_log = function(file){
   return(x)
 }
 
+#' Reading in qstat log
 qstat_log = function(file){
-  x = fread(file, sep='\t', header=FALSE, fill=TRUE)
+  x = fread(file, sep='\t', header=FALSE, fill=TRUE) 
   x = as.data.frame(x)
   colnames(x) = c('Time', 'X', 'JB_job_number', 'JB_name', 
                   'uname', 'JB_department', 'state', 
@@ -37,14 +45,15 @@ qstat_log = function(file){
   x = x %>%
     group_by(Time, uname) %>%
     summarize(n_jobs = n(),
-              io_usage = sum(io_usage),
-              cpu_usage = sum(cpu_usage),
-              mem_usage = sum(mem_usage)) %>%
+              io_usage = sum(as.Num(io_usage), na.rm=TRUE),
+              cpu_usage = sum(as.Num(cpu_usage), na.rm=TRUE),
+              mem_usage = sum(as.Num(mem_usage), na.rm=TRUE)) %>%
     ungroup()
   return(x)
 }
 
-df_log = function(file){
+#' Reading in "df" log
+df_log = function(file, input){
   col_cls = c(V3 = 'numeric', V4 = 'numeric', V5 = 'numeric', 
               V6 = 'numeric', V7 = 'numeric', V8 = 'numeric')
   x = fread(file, sep='\t', header=FALSE, fill=TRUE, 
@@ -68,12 +77,14 @@ df_log = function(file){
   x$iused = x$iused / 1e6
   x$iavail = x$iavail / 1e6
   
-  #x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
+  # filter
+  if(! is.null(input$projname) & input$projname != ''){
+    x = x[grepl(input$projname, basename(x$file)),]
+  }
   return(x)
 }
 
 format_time = function(x){
-  #x = as.POSIXct(f(x, "%Y-%m-%d %H:%M:%S"))
   x = as.POSIXct(as.POSIXlt(x,tz=Sys.timezone()))
   return(x)
 }
@@ -267,7 +278,8 @@ shinyServer(function(input, output, session){
   # df 
   .df_log = reactiveFileReader(10000, session=session, 
                                filePath=which_file('DF-LOG.tsv'), 
-                               readFunc=df_log)
+                               readFunc=df_log,
+                               input=input)
   
   #-- reactive --#
   # server load log

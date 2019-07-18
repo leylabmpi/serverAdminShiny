@@ -35,11 +35,21 @@ shinyUI(
     ),
     tabPanel("Project sizes",
       fluidRow(
+        column(3, textInput('projname',
+                            label = 'Project name filter',
+                            value = NULL))
+      ),
+      fluidRow(
         column(7, plotOutput("df_now_perc_plot", height='700px')),
         column(5, plotOutput("df_now_size_plot", height='700px'))
       )
     ),
     tabPanel("Project inodes",
+             fluidRow(
+               column(3, textInput('projname',
+                                   label = 'Project name filter',
+                                   value = NULL))
+             ),
       fluidRow(
         column(7, plotOutput("df_now_iperc_plot", height='700px')),
         column(5, plotOutput("df_now_inodes_plot", height='700px'))
