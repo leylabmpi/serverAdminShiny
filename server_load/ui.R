@@ -35,31 +35,46 @@ shinyUI(
                                       max = 24 * 7 * 4,
                                       step = 1))
              ),
-            plotOutput("qstat_plot"),
-            plotOutput("ps_rick_plot"),
-            plotOutput("ps_morty_plot")
+            tabsetPanel(type = "tabs",
+                        tabPanel('Cluster', 
+                                 plotOutput("qstat_plot", height='650px')),
+                        tabPanel('rick VM',
+                                 plotOutput("ps_rick_plot", height='650px')),
+                        tabPanel('morty VM',
+                                 plotOutput("ps_morty_plot", height='650px'))
+            )
     ),
     tabPanel("Project sizes",
       fluidRow(
-        column(3, textInput('projname1',
-                            label = 'Project name filter',
+        column(3, textInput('dirname_disk',
+                            label = 'Directory name filter',
                             value = NULL))
       ),
-      fluidRow(
-        column(7, plotOutput("df_now_perc_plot", height='700px')),
-        column(5, plotOutput("df_now_size_plot", height='700px'))
+      tabsetPanel(type = "tabs",
+                  tabPanel('abt3-projects', 
+                           plotOutput("du_now_plot_abt3_projects",
+                                      height='750px')),
+                  tabPanel('tmp-global2', 
+                           plotOutput("du_now_plot_tmp_global2")),
+                  tabPanel('abt3-home', 
+                           plotOutput("du_now_plot_abt3_home"))
       )
     ),
     tabPanel("Project inodes",
              fluidRow(
-               column(3, textInput('projname2',
-                                   label = 'Project name filter',
+               column(3, textInput('dirname_inodes',
+                                   label = 'Directory name filter',
                                    value = NULL))
              ),
-      fluidRow(
-        column(7, plotOutput("df_now_iperc_plot", height='700px')),
-        column(5, plotOutput("df_now_inodes_plot", height='700px'))
-      )
+             tabsetPanel(type = "tabs",
+                         tabPanel('abt3-projects', 
+                                  plotOutput("inodes_now_plot_abt3_projects",
+                                             height='750px')),
+                         tabPanel('tmp-global2', 
+                                  plotOutput("inodes_now_plot_tmp_global2")),
+                         tabPanel('abt3-home', 
+                                  plotOutput("inodes_now_plot_abt3_home"))
+             )
     ),
     tabPanel("RStudio Server Dashboard",
              fluidRow(
