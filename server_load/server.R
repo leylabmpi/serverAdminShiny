@@ -13,10 +13,13 @@ source('usage.R')
 
 shinyServer(function(input, output, session){
 
-  # server load
+  # lux server load
   .server_load_log = reactiveFileReader(10000, session=session, 
                                  filePath=which_file('SERVER-LOAD-LOG.csv'), 
                                  readFunc=server_load_log)
+  .server_load_log_tmp_global2 = reactiveFileReader(10000, session=session, 
+                                        filePath=which_file('SERVER-LOAD-LOG_tmp-global2.csv'), 
+                                        readFunc=server_load_log)
   # ps 
   .ps_rick_log = reactiveFileReader(10000, session=session, 
                                     filePath=which_file('PS-rick-LOG.tsv'), 
@@ -46,7 +49,10 @@ shinyServer(function(input, output, session){
   # server load log
   observe({
     output$server_load_plot <- renderPlot({
-      server_load_plot(.server_load_log(), input)
+      server_load_plot(.server_load_log(), input, ylab='LUX file server I/O load')
+    })
+    output$server_load_plot_tmp_global2 <- renderPlot({
+      server_load_plot(.server_load_log_tmp_global2(), input, ylab='/tmp/global2/ file server I/O load')
     })
   })
 

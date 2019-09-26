@@ -9,7 +9,7 @@ server_load_log = function(file){
   return(x)
 }
 
-server_load_plot = function(x, input){
+server_load_plot = function(x, input, ylab='Server I/O load'){
   min_time = max(x$Time) - input$num_hours * 60 * 60
   
   # filter log df
@@ -21,7 +21,7 @@ server_load_plot = function(x, input){
     geom_line() +
     geom_point() +
     scale_color_continuous(low='black', high='red') +
-    labs(y='LUX file server I/O load') +
+    labs(y=ylab) +
     theme_bw() +
     theme(
       text = element_text(size=14),
