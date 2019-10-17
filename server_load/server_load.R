@@ -6,6 +6,9 @@ server_load_log = function(file){
   x = as.data.frame(x)
   colnames(x) = c('Time', 'IO_load')
   x$Time = strptime(x$Time, "%m/%d/%Y_%H:%M")
+  x$IO_load = as.numeric(x$IO_load)
+  x = x[!is.na(x$Time),]
+  x = x[!is.na(x$IO_load),]
   return(x)
 }
 
