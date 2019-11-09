@@ -15,8 +15,8 @@ shinyUI(
                                       step = 1)),
                column(8)
              ),
-          plotOutput("server_load_plot"),
-          plotOutput("server_load_plot_tmp_global2")
+             plotOutput("server_load_plot"),
+             plotOutput("server_load_plot_tmp_global2")
     ),
     tabPanel("Server/cluster jobs",
              fluidRow(
@@ -38,11 +38,11 @@ shinyUI(
              ),
             tabsetPanel(type = "tabs",
                         tabPanel('Cluster', 
-                                 plotOutput("qstat_plot", height='650px')),
+                                 plotlyOutput("qstat_plot", height='600px')),
                         tabPanel('rick VM',
-                                 plotOutput("ps_rick_plot", height='650px')),
+                                 plotlyOutput("ps_rick_plot", height='600px')),
                         tabPanel('morty VM',
-                                 plotOutput("ps_morty_plot", height='650px'))
+                                 plotlyOutput("ps_morty_plot", height='600px'))
             )
     ),
     tabPanel("Project sizes",
@@ -53,12 +53,13 @@ shinyUI(
       ),
       tabsetPanel(type = "tabs",
                   tabPanel('abt3-projects', 
-                           plotOutput("du_now_plot_abt3_projects",
-                                      height='750px')),
+                           plotlyOutput("du_now_plot_abt3_projects",
+                                        height='850px')),
                   tabPanel('tmp-global2', 
-                           plotOutput("du_now_plot_tmp_global2")),
+                           plotlyOutput("du_now_plot_tmp_global2",
+                                        height='600px')),
                   tabPanel('abt3-home', 
-                           plotOutput("du_now_plot_abt3_home"))
+                           plotlyOutput("du_now_plot_abt3_home"))
       )
     ),
     tabPanel("Project inodes",
@@ -69,12 +70,13 @@ shinyUI(
              ),
              tabsetPanel(type = "tabs",
                          tabPanel('abt3-projects', 
-                                  plotOutput("inodes_now_plot_abt3_projects",
-                                             height='750px')),
+                                  plotlyOutput("inodes_now_plot_abt3_projects",
+                                                height='850px')),
                          tabPanel('tmp-global2', 
-                                  plotOutput("inodes_now_plot_tmp_global2")),
+                                  plotlyOutput("inodes_now_plot_tmp_global2",
+                                               height='500px')),
                          tabPanel('abt3-home', 
-                                  plotOutput("inodes_now_plot_abt3_home"))
+                                  plotlyOutput("inodes_now_plot_abt3_home"))
              )
     ),
     tabPanel("RStudio Server Dashboard",

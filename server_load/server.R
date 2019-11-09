@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(data.table)
+library(plotly)
 
 source('utils.R')
 source('server_load.R')
@@ -58,13 +59,13 @@ shinyServer(function(input, output, session){
 
   # PS & qstat logs
   observe({
-    output$qstat_plot <- renderPlot({
+    output$qstat_plot <- renderPlotly({
      ps_log_plot(.qstat_log(), input, 'Cluster')
     })
-    output$ps_rick_plot <- renderPlot({
+    output$ps_rick_plot <- renderPlotly({
       ps_log_plot(.ps_rick_log(), input, 'rick VM')
     })
-    output$ps_morty_plot <- renderPlot({
+    output$ps_morty_plot <- renderPlotly({
       ps_log_plot(.ps_morty_log(), input, 'morty VM')
     })
   })
@@ -72,15 +73,15 @@ shinyServer(function(input, output, session){
   # disk usage log
   observe({
     df = .du_log()
-    output$du_now_plot_abt3_projects <- renderPlot({
+    output$du_now_plot_abt3_projects <- renderPlotly({
       du_now_plot(df, keep_cat='abt3-projects',
                   dir_filter=input$dirname_disk)
     })
-    output$du_now_plot_tmp_global2 <- renderPlot({
+    output$du_now_plot_tmp_global2 <- renderPlotly({
       du_now_plot(df, keep_cat='tmp-global2',
                   dir_filter=input$dirname_disk)
     })
-    output$du_now_plot_abt3_home <- renderPlot({
+    output$du_now_plot_abt3_home <- renderPlotly({
       du_now_plot(df, keep_cat='abt3-home',
                   dir_filter=input$dirname_disk)
     })
@@ -89,15 +90,15 @@ shinyServer(function(input, output, session){
   # inodes log
   observe({
     df = .inodes_log()
-    output$inodes_now_plot_abt3_projects <- renderPlot({
+    output$inodes_now_plot_abt3_projects <- renderPlotly({
       du_now_plot(df, keep_cat='abt3-projects',
                   dir_filter=input$dirname_inodes)
     })
-    output$inodes_now_plot_tmp_global2 <- renderPlot({
+    output$inodes_now_plot_tmp_global2 <- renderPlotly({
       du_now_plot(df, keep_cat='tmp-global2',
                   dir_filter=input$dirname_inodes)
     })
-    output$inodes_now_plot_abt3_home <- renderPlot({
+    output$inodes_now_plot_abt3_home <- renderPlotly({
       du_now_plot(df, keep_cat='abt3-home',
                   dir_filter=input$dirname_inodes)
     })
