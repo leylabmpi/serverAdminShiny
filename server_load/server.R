@@ -10,6 +10,7 @@ source('server_load.R')
 source('PS.R')
 source('qstat.R')
 source('usage.R')
+source('node_FS_mount.R')
 
 
 shinyServer(function(input, output, session){
@@ -46,6 +47,12 @@ shinyServer(function(input, output, session){
                                    readFunc=inodes_log,
                                    input=input)
   
+  # server file system mount
+  .node_FS_log = reactiveFileReader(10000, session=session,
+                                   filePath=which_file('node_FS_mount.txt'),
+                                   readFunc=node_FS_log,
+                                   input=input)
+  
   #-- reactive --#
   # server load log
   observe({
@@ -59,13 +66,13 @@ shinyServer(function(input, output, session){
 
   # PS & qstat logs
   observe({
-    output$qstat_plot <- renderPlotly({
+    output$qstat_plot = renderPlotly({
      ps_log_plot(.qstat_log(), input, 'Cluster')
     })
-    output$ps_rick_plot <- renderPlotly({
+    output$ps_rick_plot = renderPlotly({
       ps_log_plot(.ps_rick_log(), input, 'rick VM')
     })
-    output$ps_morty_plot <- renderPlotly({
+    output$ps_morty_plot = renderPlotly({
       ps_log_plot(.ps_morty_log(), input, 'morty VM')
     })
   })
@@ -73,15 +80,15 @@ shinyServer(function(input, output, session){
   # disk usage log
   observe({
     df = .du_log()
-    output$du_now_plot_abt3_projects <- renderPlotly({
+    output$du_now_plot_abt3_projects = renderPlotly({
       du_now_plot(df, keep_cat='abt3-projects',
                   dir_filter=input$dirname_disk)
     })
-    output$du_now_plot_tmp_global2 <- renderPlotly({
+    output$du_now_plot_tmp_global2 = renderPlotly({
       du_now_plot(df, keep_cat='tmp-global2',
                   dir_filter=input$dirname_disk)
     })
-    output$du_now_plot_abt3_home <- renderPlotly({
+    output$du_now_plot_abt3_home = renderPlotly({
       du_now_plot(df, keep_cat='abt3-home',
                   dir_filter=input$dirname_disk)
     })
@@ -90,22 +97,30 @@ shinyServer(function(input, output, session){
   # inodes log
   observe({
     df = .inodes_log()
-    output$inodes_now_plot_abt3_projects <- renderPlotly({
+    output$inodes_now_plot_abt3_projects = renderPlotly({
       du_now_plot(df, keep_cat='abt3-projects',
                   dir_filter=input$dirname_inodes)
     })
-    output$inodes_now_plot_tmp_global2 <- renderPlotly({
+    output$inodes_now_plot_tmp_global2 = renderPlotly({
       du_now_plot(df, keep_cat='tmp-global2',
                   dir_filter=input$dirname_inodes)
     })
-    output$inodes_now_plot_abt3_home <- renderPlotly({
+    output$inodes_now_plot_abt3_home = renderPlotly({
       du_now_plot(df, keep_cat='abt3-home',
                   dir_filter=input$dirname_inodes)
     })
   })
   
+  # node file system mount
+  observe({
+    output$node_FS_mount_plot = renderPlotly({
+      node_FS_plot(.node_FS_log())
+    })
+  })
+  
   # Rstudio server pro dashboard
   output$rstudio_dashboard <- renderUI({
-    tags$iframe(src = 'http://morty.eb.local:8787/admin/dashboard', height=500, width=1000)
+    tags$iframe(src = 'http://morty.eb.local:8787/admin/dashboard',
+                height=500, width=1000)
   })
 })

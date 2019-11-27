@@ -80,6 +80,9 @@ shinyUI(
                                   plotlyOutput("inodes_now_plot_abt3_home"))
              )
     ),
+    tabPanel("Node file system mounts",
+             plotlyOutput("node_FS_mount_plot", height='400px')
+    ),
     tabPanel("RStudio Server Dashboard",
              fluidRow(
                br(),
