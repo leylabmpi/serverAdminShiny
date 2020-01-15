@@ -11,15 +11,15 @@ disk_usage_log = function(file, input){
 du_now_plot = function(df, keep_cat, dir_filter=NULL){
   if (!is.null(dir_filter)){
     df = df %>%
-      filter(grepl(dir_filter, Directory))
+      filter(grepl(dir_filter, Directory),
+             Category == keep_cat) 
   }
   if(nrow(df) < 1){
     return(NULL)
   }
   levs = c('Million_files', 'Terabytes', 'Percent')
   p = df %>%
-    filter(max(Time) - Time < 5,
-           Category == keep_cat) %>%
+    filter(max(Time) - Time < 5) %>%
     mutate(Percent = Percent %>% as.Num,
            Directory = Directory %>% as.character,
            Directory = reorder(Directory, Percent)) %>%
@@ -29,7 +29,10 @@ du_now_plot = function(df, keep_cat, dir_filter=NULL){
     geom_bar(stat='identity') +
     coord_flip() +
     facet_grid(. ~ Unit, scales='free_x') +
-    theme_bw()
+    theme_bw() +
+    theme(
+      axis.title.y = element_blank()
+    )
   return(p)
 }
 

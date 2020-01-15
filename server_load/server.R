@@ -19,6 +19,9 @@ shinyServer(function(input, output, session){
   .server_load_log = reactiveFileReader(10000, session=session, 
                                  filePath=which_file('SERVER-LOAD-LOG.csv'), 
                                  readFunc=server_load_log)
+  .server_load_log_abt3scratch = reactiveFileReader(10000, session=session, 
+                                                    filePath=which_file('SERVER-LOAD-LOG_abt3-scratch.csv'), 
+                                                    readFunc=server_load_log)
   .server_load_log_tmp_global2 = reactiveFileReader(10000, session=session, 
                                         filePath=which_file('SERVER-LOAD-LOG_tmp-global2.csv'), 
                                         readFunc=server_load_log)
@@ -59,6 +62,9 @@ shinyServer(function(input, output, session){
     output$server_load_plot <- renderPlot({
       server_load_plot(.server_load_log(), input, ylab='LUX file server I/O load')
     })
+    output$server_load_plot_abt3scratch <- renderPlot({
+      server_load_plot(.server_load_log_abt3scratch(), input, ylab='/ebio/abt3_scratch/ file server I/O load')
+    })
     output$server_load_plot_tmp_global2 <- renderPlot({
       server_load_plot(.server_load_log_tmp_global2(), input, ylab='/tmp/global2/ file server I/O load')
     })
@@ -84,6 +90,10 @@ shinyServer(function(input, output, session){
       du_now_plot(df, keep_cat='abt3-projects',
                   dir_filter=input$dirname_disk)
     })
+    output$du_now_plot_abt3scratch = renderPlotly({
+      du_now_plot(df, keep_cat='abt3-scratch',
+                  dir_filter=input$dirname_disk)
+    })
     output$du_now_plot_tmp_global2 = renderPlotly({
       du_now_plot(df, keep_cat='tmp-global2',
                   dir_filter=input$dirname_disk)
@@ -99,6 +109,10 @@ shinyServer(function(input, output, session){
     df = .inodes_log()
     output$inodes_now_plot_abt3_projects = renderPlotly({
       du_now_plot(df, keep_cat='abt3-projects',
+                  dir_filter=input$dirname_inodes)
+    })
+    output$inodes_now_plot_abt3scratch = renderPlotly({
+      du_now_plot(df, keep_cat='abt3-scratch',
                   dir_filter=input$dirname_inodes)
     })
     output$inodes_now_plot_tmp_global2 = renderPlotly({

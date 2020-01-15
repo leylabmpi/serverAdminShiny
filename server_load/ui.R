@@ -17,6 +17,7 @@ shinyUI(
                column(8)
              ),
              plotOutput("server_load_plot"),
+             plotOutput("server_load_plot_abt3scratch"),
              plotOutput("server_load_plot_tmp_global2")
     ),
     tabPanel("Server/cluster jobs",
@@ -56,6 +57,9 @@ shinyUI(
                   tabPanel('abt3-projects', 
                            plotlyOutput("du_now_plot_abt3_projects",
                                         height='850px')),
+                  tabPanel('abt3-scratch', 
+                           plotlyOutput("du_now_plot_abt3scratch",
+                                        height='850px')),
                   tabPanel('tmp-global2', 
                            plotlyOutput("du_now_plot_tmp_global2",
                                         height='600px')),
@@ -73,6 +77,9 @@ shinyUI(
                          tabPanel('abt3-projects', 
                                   plotlyOutput("inodes_now_plot_abt3_projects",
                                                 height='850px')),
+                         tabPanel('abt3-scratch', 
+                                  plotlyOutput("inodes_now_plot_abt3scratch",
+                                               height='850px')),
                          tabPanel('tmp-global2', 
                                   plotlyOutput("inodes_now_plot_tmp_global2",
                                                height='500px')),
