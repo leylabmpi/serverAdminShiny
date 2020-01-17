@@ -94,6 +94,10 @@ shinyServer(function(input, output, session){
       du_now_plot(df, keep_cat='abt3-scratch',
                   dir_filter=input$dirname_disk)
     })
+    output$du_now_plot_tmp_global = renderPlotly({
+      du_now_plot(df, keep_cat='tmp-global',
+                  dir_filter=input$dirname_disk)
+    })
     output$du_now_plot_tmp_global2 = renderPlotly({
       du_now_plot(df, keep_cat='tmp-global2',
                   dir_filter=input$dirname_disk)
@@ -113,6 +117,10 @@ shinyServer(function(input, output, session){
     })
     output$inodes_now_plot_abt3scratch = renderPlotly({
       du_now_plot(df, keep_cat='abt3-scratch',
+                  dir_filter=input$dirname_inodes)
+    })
+    output$inodes_now_plot_tmp_global = renderPlotly({
+      du_now_plot(df, keep_cat='tmp-global',
                   dir_filter=input$dirname_inodes)
     })
     output$inodes_now_plot_tmp_global2 = renderPlotly({
