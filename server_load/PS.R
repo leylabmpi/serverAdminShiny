@@ -33,9 +33,11 @@ ps_log_plot = function(df, input, plot_title){
     df = df[grepl(input$uname, df$uname),]
   }
   df$Time = format_time(df$Time) 
+  df = filter(df, !is.na(Time))
   if(nrow(df) <= 0){
     return(NULL)
   }
+  
   p = df %>%
     gather(Metric, Value, -Time, -uname) %>%
     ggplot(aes(Time, Value, group=uname, color=uname)) +
